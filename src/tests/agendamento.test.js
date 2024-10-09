@@ -1,77 +1,79 @@
-const db = require('../db/dbConnection.js')
+const { getUserById, connection } = require('../db/dbConnection');
 
-describe('CRUD de Agendamentos', () => {
-  let idAgenda; // Variável para armazenar o ID do agendamento inserido
 
+describe('Testes para getUserById', () => {
+
+  // Criar uma tabela nova no banco de dados com o nome "agendamento" caso não exista
   beforeAll(async () => {
-    // Criar a tabela se não existir
-    await db.query(`
-      CREATE TABLE IF NOT EXISTS agendamentos (
-        id_agenda INT AUTO_INCREMENT PRIMARY KEY,
-        nome_pessoa VARCHAR(255) NOT NULL,
-        contato_telefonico VARCHAR(15) NOT NULL,
-        email VARCHAR(255) NOT NULL,
-        data_agendamento DATE NOT NULL
+    await connection.query(`
+      CREATE TABLE IF NOT EXISTS agendamento (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        nome_pessoa VARCHAR(255),
+        contato VARCHAR(20),
+        email VARCHAR(255),
+        data_agendamento VARCHAR(20)
       )
+    `);
+    // Inserir um registro inicial
+    await connection.query(`
+      INSERT INTO agendamento (nome_pessoa, contato, email, data_agendamento) 
+      VALUES ('Erica Marques', '7555889885', 'email@email.com', '2024-10-11')
     `);
   });
 
+  // Limpeza e fechamento da conexão após os testes
   afterAll(async () => {
-    await db.query('DELETE FROM agendamentos'); // Limpar a tabela
-    await db.end(); // Encerrar a conexão com o banco
+    //await connection.query("TRUNCATE TABLE agendamento"); // Limpar dados se necessário
+    await connection.end();
   });
 
-  test('Inserção - Verifique se um novo agendamento pode ser criado', async () => {
-    const [result] = await db.query(
-      'INSERT INTO agendamentos (nome_pessoa, contato_telefonico, email, data_agendamento) VALUES (?, ?, ?, ?)',
-      ['João', '123456789', 'joao@example.com', '2024-10-05']
+  // Teste 1: Verificar leitura de dados pelo ID
+  test('deve retornar o usuário correto pelo id', async () => {
+    const inicio = performance.now();
+    const user = await getUserById(1); // Certifique-se de que está buscando o ID correto
+    const fim = performance.now();
+
+    const duracao = fim - inicio;
+    console.log(`Tempo de execução: ${duracao.toFixed(2)} ms`);
+    expect(duracao).toBeLessThanOrEqual(100);
+
+    expect(user).toHaveProperty('nome_pessoa', 'Erica Marques');
+    expect(user).toHaveProperty('contato', '7555889885');
+    expect(user).toHaveProperty('email', 'email@email.com');
+    expect(user).toHaveProperty('data_agendamento', '2024-10-11');
+
+    console.log(`Usuário: `, user);
+  });
+
+  // Teste 2: Verificar tempo de resposta do getUserById
+  test('Verificar se getUserById responde em menos de 50ms', async () => {
+    const inicio = performance.now();
+    await getUserById(1); // Certifique-se de que está buscando o ID correto
+    const fim = performance.now();
+
+    const duracao = fim - inicio;
+    console.log(`Tempo de execução: ${duracao.toFixed(2)} ms`);
+    expect(duracao).toBeLessThanOrEqual(50);
+  });
+
+  // Teste 3: Atualização de agendamento
+  test('Atualização de agendamento', async () => {
+    // Atualizar um registro
+    const [result] = await connection.execute(
+      'UPDATE agendamento SET nome_pessoa = ? WHERE id = ?',
+      ['Augusto Guimarães', 1] // Certifique-se de que o ID 1 existe
     );
 
-    idAgenda = result.insertId; // Armazena o ID do agendamento inserido
-    expect(result.affectedRows).toBe(1);
-  });
-
-  test('Leitura - Verifique se o agendamento pode ser lido', async () => {
-    const [rows] = await db.query('SELECT * FROM agendamentos WHERE id_agenda = ?', [idAgenda]);
-    expect(rows.length).toBe(1);
-    expect(rows[0].nome_pessoa).toBe('João');
-    expect(rows[0].contato_telefonico).toBe('123456789');
-    expect(rows[0].email).toBe('joao@example.com');
-    expect(rows[0].data_agendamento).toBe('2024-10-05');
-  });
-
-  test('Leitura - Selecionar por parte do nome', async () => {
-    const [rows] = await db.query('SELECT * FROM agendamentos WHERE nome_pessoa LIKE ?', ['Jo%']);
-    expect(rows.length).toBe(1);
-    expect(rows[0].nome_pessoa).toBe('João');
-  });
-
-  test('Leitura - Selecionar por intervalo de datas', async () => {
-    const [rows] = await db.query('SELECT * FROM agendamentos WHERE data_agendamento BETWEEN ? AND ?', ['2024-10-01', '2024-10-10']);
-    expect(rows.length).toBe(1);
-    expect(rows[0].nome_pessoa).toBe('João');
-  });
-
-  test('Atualização - Verifique se um agendamento pode ser atualizado', async () => {
-    const [result] = await db.query(
-      'UPDATE agendamentos SET nome_pessoa = ?, contato_telefonico = ? WHERE id_agenda = ?',
-      ['Maria', '987654321', idAgenda]
-    );
     expect(result.affectedRows).toBe(1);
 
-    // Verifique se as alterações foram aplicadas
-    const [rows] = await db.query('SELECT * FROM agendamentos WHERE id_agenda = ?', [idAgenda]);
-    expect(rows[0].nome_pessoa).toBe('Maria');
-    expect(rows[0].contato_telefonico).toBe('987654321');
+    const updateUser = await getUserById(1);
+    expect(updateUser).toHaveProperty('nome_pessoa', 'Augusto Guimarães');
   });
 
-  test('Deleção - Verifique se um agendamento pode ser deletado', async () => {
-    const [result] = await db.query('DELETE FROM agendamentos WHERE id_agenda = ?', [idAgenda]);
-    expect(result.affectedRows).toBe(1);
-
-    // Verifique se o agendamento foi realmente deletado
-    const [rows] = await db.query('SELECT * FROM agendamentos WHERE id_agenda = ?', [idAgenda]);
-    expect(rows.length).toBe(0);
+  // Teste 4: Verificar se parte do nome está presente
+  test('verifica se parte do nome está presente', async () => {
+    const agendamento = await getUserById(1);
+    expect(agendamento.nome_pessoa).toMatch(/Augusto/);
   });
+
 });
-module.exports = agendamento;

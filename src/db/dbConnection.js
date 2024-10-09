@@ -1,16 +1,16 @@
-const mysql = require ('mysql2/promise')
+const mysql = require('mysql2/promise');
 
-const connection = mysql.createPool({
-  host: 'localhost',
-  user: 'root',
-  password: 'password',
-  database: 'estetica_plus'
+const connection = mysql.createConnection({
+    host:'localhost',
+    user:'root',
+    password:'password',
+    database: 'estetica_plus'
 });
 
-async function getUSerById(id) {
-  const [rows] = await connection.query('SELECT * FROM users WHERE id = ?, [id]');
-  return rows[0];
 
-}  
+async function getUserById(id) {
+    const [rows] = await connection.query('SELECT * FROM agendamento WHERE id = ?', [id]);
+    return rows[0];
+}
 
-module.exports = {getUserById, connection};
+module.exports = { connection, getUserById };
