@@ -1,10 +1,10 @@
 const mysql = require('mysql2/promise');
 
-const connection = mysql.createConnection({
+const connection = mysql.createPool({
     host:'localhost',
     user:'root',
     password:'password',
-    database: 'estetica_plus'
+    database: 'agendamento_plus'
 });
 
 
@@ -13,4 +13,4 @@ async function getUserById(id) {
     return rows[0];
 }
 
-module.exports = { connection, getUserById };
+module.exports = { getUserById, connection };

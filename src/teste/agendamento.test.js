@@ -1,4 +1,4 @@
-const { getUserById, connection } = require('../db/dbConnection');
+const { getUserById, connection } = require('./db');
 
 
 describe('Testes para getUserById', () => {
@@ -17,7 +17,7 @@ describe('Testes para getUserById', () => {
     // Inserir um registro inicial
     await connection.query(`
       INSERT INTO agendamento (nome_pessoa, contato, email, data_agendamento) 
-      VALUES ('Erica Marques', '7555889885', 'email@email.com', '2024-10-11')
+      VALUES ('Erica Marques', '7555369997855', 'email@email.com', '2024-10-30')
     `);
   });
 
@@ -37,10 +37,10 @@ describe('Testes para getUserById', () => {
     console.log(`Tempo de execução: ${duracao.toFixed(2)} ms`);
     expect(duracao).toBeLessThanOrEqual(100);
 
-    expect(user).toHaveProperty('nome_pessoa', 'Erica Marques');
-    expect(user).toHaveProperty('contato', '7555889885');
+    expect(user).toHaveProperty('nome_pessoa', 'Erica Linda');
+    expect(user).toHaveProperty('contato', '7555369997855');
     expect(user).toHaveProperty('email', 'email@email.com');
-    expect(user).toHaveProperty('data_agendamento', '2024-10-11');
+    expect(user).toHaveProperty('data_agendamento', '2024-10-30');
 
     console.log(`Usuário: `, user);
   });
@@ -61,19 +61,19 @@ describe('Testes para getUserById', () => {
     // Atualizar um registro
     const [result] = await connection.execute(
       'UPDATE agendamento SET nome_pessoa = ? WHERE id = ?',
-      ['Augusto Guimarães', 1] // Certifique-se de que o ID 1 existe
+      ['Erica Linda', 1] // Certifique-se de que o ID 1 existe
     );
 
     expect(result.affectedRows).toBe(1);
 
     const updateUser = await getUserById(1);
-    expect(updateUser).toHaveProperty('nome_pessoa', 'Augusto Guimarães');
+    expect(updateUser).toHaveProperty('nome_pessoa', 'Erica Linda');
   });
 
   // Teste 4: Verificar se parte do nome está presente
   test('verifica se parte do nome está presente', async () => {
     const agendamento = await getUserById(1);
-    expect(agendamento.nome_pessoa).toMatch(/Augusto/);
+    expect(agendamento.nome_pessoa).toMatch(/Erica/);
   });
 
 });
